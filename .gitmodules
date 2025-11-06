@@ -1,0 +1,3 @@
+[submodule "DMCHDLoader"]
+	path = DMCHDLoader
+	url = https://github.com/ashindigo/DMCHDLoader
