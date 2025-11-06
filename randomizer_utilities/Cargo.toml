@@ -1,0 +1,12 @@
+[package]
+name = "randomizer_utilities"
+version = "0.0.0"
+edition = "2024"
+
+[dependencies]
+log = {workspace = true}
+windows = { workspace = true, features = ["Win32_System_LibraryLoader"] }
+log4rs = "1.4.0"
+figment = { version = "0.10.19", features = ["toml"] }
+serde = { version = "1.0.228", features = ["derive"] }
+toml = "0.9.8"

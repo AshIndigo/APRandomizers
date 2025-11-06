@@ -1,9 +1,10 @@
 [workspace]
-members = ["archipelago_rs", "DMC3ArchipelagoClient", "DMCHDLoader"]
+members = ["archipelago_rs", "DMC3ArchipelagoClient", "DMCHDLoader", "randomizer_utilities"]
 resolver = "3"
 
 [profile.release]
 lto = true
 
 [workspace.dependencies]
-windows = { version = "0.62.2" }
+windows = "0.62.2"
+log = "0.4.28"
