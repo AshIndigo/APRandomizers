@@ -1,3 +1,9 @@
 [submodule "DMCHDLoader"]
 	path = DMCHDLoader
 	url = https://github.com/ashindigo/DMCHDLoader
+[submodule "archipelago_rs"]
+	path = archipelago_rs
+	url = https://github.com/ashindigo/archipelago_rs
+[submodule "DMC3ArchipelagoClient"]
+	path = DMC3ArchipelagoClient
+	url = https://github.com/ashindigo/DMC3ArchipelagoClient
