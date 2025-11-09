@@ -83,31 +83,29 @@ where T: Default + serde::ser::Serialize + serde::de::Deserialize<'static> {
     if !fs::exists("archipelago")? {
         fs::create_dir("archipelago/")?;
     }
-    let binding = format!("archipelago/{}.toml", config_name).clone();
-    let config_path = binding.as_str();
+    let config_path = format!("archipelago/{}.toml", config_name);
     if !Path::new(&config_path).exists() {
         log::debug!("Config file not found. Creating a default one.");
         let toml_string =
             toml::to_string(&T::default()).expect("Could not serialize default config");
-        fs::write(config_path, toml_string).expect("Could not write default config to file");
+        fs::write(&config_path, toml_string).expect("Could not write default config to file");
     }
     match Figment::new()
-        .merge(Toml::file(config_path))
+        .merge(Toml::file(&config_path))
         .extract::<T>()
     {
         Ok(config) => Ok(config),
         Err(err) => {
             log::warn!("Failed to parse config: {err}. Backing up and regenerating.");
+            
+            let backup_path = format!("archipelago/{}.old.toml", config_name);
+            fs::rename(&config_path, &backup_path)?;
+            log::info!("Old config backed up to {backup_path}");
 
-            // TODO This annoys me
-            let binding = format!("archipelago/{}.old.toml", config_name);
-            let backup_path = binding.as_str();
-            fs::rename(config_path, backup_path)?;
-            log::info!("Old config backed up to {:?}", backup_path);
 
             let toml_string =
                 toml::to_string(&T::default()).expect("Could not serialize default config");
-            fs::write(config_path, &toml_string)?;
+            fs::write(&config_path, &toml_string)?;
 
             Ok(T::default())
         }
