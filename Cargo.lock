@@ -3,6 +3,10 @@
 version = 4
 
 [[package]]
+name = "DMC1ArchipelagoClient"
+version = "0.1.0"
+
+[[package]]
 name = "DMC3ArchipelagoClient"
 version = "0.3.0"
 dependencies = [
