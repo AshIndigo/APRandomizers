@@ -5,6 +5,16 @@ version = 4
 [[package]]
 name = "DMC1ArchipelagoClient"
 version = "0.1.0"
+dependencies = [
+ "archipelago_rs",
+ "log",
+ "randomizer_utilities",
+ "serde",
+ "serde_json",
+ "serde_path_to_error",
+ "tokio",
+ "windows",
+]
 
 [[package]]
 name = "DMC3ArchipelagoClient"
@@ -895,10 +905,14 @@ dependencies = [
 name = "randomizer_utilities"
 version = "0.0.0"
 dependencies = [
+ "archipelago_rs",
  "figment",
  "log",
  "log4rs",
  "serde",
+ "serde_json",
+ "strum_macros",
+ "tokio",
  "toml 0.9.8",
  "windows",
 ]

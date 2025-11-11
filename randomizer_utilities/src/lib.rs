@@ -17,6 +17,13 @@ use log::LevelFilter;
 use windows::core::PCWSTR;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 
+pub mod cache;
+pub mod exception_handler;
+pub mod item_sync;
+pub mod archipelago_utilities;
+pub mod mapping_utilities;
+pub mod ui_utilities;
+
 /// Default config for log files
 ///
 /// # Arguments
@@ -71,6 +78,21 @@ pub fn is_library_loaded(name: &str) -> bool {
             !module_handle.is_invalid()
         } else {
             false
+        }
+    }
+}
+
+/// Generic method to get the base address for the specified module, returns 0 if it doesn't exist
+pub fn get_base_address(module_name: &str) -> usize {
+    let wide_name: Vec<u16> = OsStr::new(&module_name)
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
+    unsafe {
+        if let Ok(module_handle) = GetModuleHandleW(PCWSTR::from_raw(wide_name.as_ptr())) {
+            module_handle.0 as usize
+        } else {
+            0
         }
     }
 }
