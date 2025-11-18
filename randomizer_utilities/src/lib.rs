@@ -3,6 +3,7 @@ use std::ffi::OsStr;
 use std::fs;
 use std::os::windows::ffi::OsStrExt;
 use std::path::Path;
+use std::sync::OnceLock;
 use figment::Figment;
 use figment::providers::{Format, Toml};
 use log4rs::append::console::ConsoleAppender;
@@ -14,6 +15,8 @@ use log4rs::config::{Appender, Logger, Root};
 use log4rs::encode::pattern::PatternEncoder;
 use log4rs::{Config, Handle};
 use log::LevelFilter;
+use tokio::sync;
+use tokio::sync::mpsc::{Receiver, Sender};
 use windows::core::PCWSTR;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 
@@ -40,7 +43,7 @@ pub fn setup_logger(prefix: &str) -> Handle {
         .encoder(Box::new(PatternEncoder::new("{d} {l} {t} - {m}{n}")))
         .append(false)
         .build(
-            format!("logs/{}.log", prefix),
+            format!("logs/{}_latest.log", prefix),
             Box::new(CompoundPolicy::new(
                 Box::new(OnStartUpTrigger::new(10)), // 0x35c Rough guess based on the usual log output I spill out
                 Box::new(
@@ -97,6 +100,15 @@ pub fn get_base_address(module_name: &str) -> usize {
     }
 }
 
+/// Reads <T> data from a provided offset
+pub fn read_data_from_address<T>(address: usize) -> T
+where
+    T: Copy,
+{
+    unsafe { *(address as *const T) }
+}
+
+
 /// Loads or create a config file with the given name and struct.
 ///
 /// This will also remake the config if the file cannot be read
@@ -132,4 +144,10 @@ where T: Default + serde::ser::Serialize + serde::de::Deserialize<'static> {
             Ok(T::default())
         }
     }
+}
+
+pub fn setup_channel_pair<T>(channel: &OnceLock<Sender<T>>, buffer_count: Option<usize>) -> Receiver<T>  {
+    let (tx, rx) = sync::mpsc::channel(buffer_count.unwrap_or(8));
+    channel.set(tx).expect("TX already initialized");
+    rx
 }

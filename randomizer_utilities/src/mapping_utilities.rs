@@ -28,6 +28,7 @@ impl LocationData {
         } else {
             match self.item_id {
                 None => 0,
+                // For DMC1 This will need to be translated to a proper ID+Category
                 Some(id) => id as u32,
             }
         }
