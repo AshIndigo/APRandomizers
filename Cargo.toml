@@ -8,3 +8,4 @@ lto = true
 [workspace.dependencies]
 windows = "0.62.2"
 log = "0.4.28"
+anyhow = "1.0.100"
