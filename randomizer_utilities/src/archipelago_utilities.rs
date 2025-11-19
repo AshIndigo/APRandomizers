@@ -349,7 +349,7 @@ pub static CHECKED_LOCATIONS: LazyLock<RwLock<Vec<&'static str>>> =
 pub async fn connect_local_archipelago_proxy<C: GameConfig>(
     url: String,
 ) -> Result<ArchipelagoClient, ArchipelagoError> {
-    log::info!("Attempting room connection");
+    //log::info!("Attempting room connection with url: {url}");
     let mut ap_client = get_archipelago_client(&url).await?;
     let connected = ap_client
         .connect(
