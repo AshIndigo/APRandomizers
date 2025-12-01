@@ -1,6 +1,6 @@
-
+use std::error::Error;
 use std::ffi::OsStr;
-use std::fs;
+use std::{fs, ptr};
 use std::os::windows::ffi::OsStrExt;
 use std::path::Path;
 use std::sync::OnceLock;
@@ -19,6 +19,8 @@ use tokio::sync;
 use tokio::sync::mpsc::{Receiver, Sender};
 use windows::core::PCWSTR;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
+use windows::Win32::System::Memory::{VirtualProtect, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS};
+use windows::Win32::Foundation::GetLastError;
 
 pub mod cache;
 pub mod exception_handler;
@@ -112,7 +114,7 @@ where
 /// Loads or create a config file with the given name and struct.
 ///
 /// This will also remake the config if the file cannot be read
-pub fn load_config<T>(config_name: &str) -> Result<T, Box<dyn std::error::Error>>
+pub fn load_config<T>(config_name: &str) -> Result<T, Box<dyn Error>>
 where T: Default + serde::ser::Serialize + serde::de::Deserialize<'static> {
     if !fs::exists("archipelago")? {
         fs::create_dir("archipelago/")?;
@@ -150,4 +152,53 @@ pub fn setup_channel_pair<T>(channel: &OnceLock<Sender<T>>, buffer_count: Option
     let (tx, rx) = sync::mpsc::channel(buffer_count.unwrap_or(8));
     channel.set(tx).expect("TX already initialized");
     rx
+}
+
+pub fn modify_protected_memory<F, R, T>(f: F, offset: *mut T) -> Result<R, Box<dyn Error>>
+where
+    F: FnOnce() -> R,
+{
+    let length = size_of::<T>();
+    let mut old_protect = PAGE_PROTECTION_FLAGS::default();
+    unsafe {
+        if VirtualProtect(
+            offset as *mut _,
+            length,
+            PAGE_EXECUTE_READWRITE,
+            &mut old_protect,
+        )
+        .is_err()
+        {
+            return Err(format!("Failed to use VirtualProtect (1): {:?}", GetLastError()).into());
+        }
+        let res = f();
+        if VirtualProtect(offset as *mut _, length, old_protect, &mut old_protect).is_err() {
+            return Err(format!("Failed to use VirtualProtect (2): {:?}", GetLastError()).into());
+        }
+        Ok(res)
+    }
+}
+
+pub unsafe fn replace_single_byte(offset_orig: usize, new_value: u8) {
+    let offset = offset_orig as *mut u8;
+    match modify_protected_memory(
+        || unsafe {
+            ptr::write(offset, new_value);
+        },
+        offset,
+    ) {
+        Ok(()) => {
+            const LOG_BYTE_REPLACEMENTS: bool = false;
+            if LOG_BYTE_REPLACEMENTS {
+                log::debug!(
+                    "Modified byte at: Offset: {:X}, byte: {:X}",
+                    offset_orig,
+                    new_value
+                );
+            }
+        }
+        Err(err) => {
+            log::error!("Failed to modify byte at offset: {offset_orig:X}: {err:?}");
+        }
+    }
 }

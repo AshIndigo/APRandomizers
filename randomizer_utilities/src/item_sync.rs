@@ -5,12 +5,12 @@ use std::error::Error;
 use std::fs::File;
 use std::io::{BufReader, Write};
 use std::path::Path;
-use std::sync::atomic::{AtomicI32};
+use std::sync::atomic::{AtomicI64};
 use std::sync::{Mutex, OnceLock};
 
 const SYNC_FILE: &str = "archipelago.json";
 pub static SYNC_DATA: OnceLock<Mutex<SyncData>> = OnceLock::new();
-pub static CURRENT_INDEX: AtomicI32 = AtomicI32::new(0);
+pub static CURRENT_INDEX: AtomicI64 = AtomicI64::new(0);
 
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct SyncData {
@@ -19,7 +19,7 @@ pub struct SyncData {
 
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct RoomSyncInfo {
-    pub sync_index: i32,
+    pub sync_index: i64,
     pub offline_checks: Vec<i64>,
 }
 
@@ -57,7 +57,7 @@ pub fn read_save_data() -> Result<SyncData, Box<dyn Error>> {
     }
 }
 
-pub fn get_index(seed_name: &String, slot_number: i32) -> String {
+pub fn get_index(seed_name: &String, slot_number: i64) -> String {
     format!(
         "{}_{}",
         seed_name,

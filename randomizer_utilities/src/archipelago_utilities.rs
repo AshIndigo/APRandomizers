@@ -1,23 +1,26 @@
-use std::fs::remove_file;
-use std::sync::atomic::{AtomicI32, Ordering};
-use std::sync::{LazyLock, RwLock};
-use std::time::{SystemTime, UNIX_EPOCH};
-use owo_colors::OwoColorize;
-use serde_json::json;
-use tokio::sync::Mutex;
-use archipelago_rs::client::{ArchipelagoClient, ArchipelagoError};
-use archipelago_rs::protocol::{Bounce, ClientMessage, Connected, GetDataPackage, JSONColor, JSONMessagePart, PrintJSON, ServerMessage};
 use crate::cache::{ChecksumError, DATA_PACKAGE};
-use crate::{cache, item_sync, mapping_utilities};
 use crate::item_sync::get_index;
 use crate::mapping_utilities::GameConfig;
+use crate::{cache, item_sync, mapping_utilities};
+use archipelago_rs::client::{ArchipelagoClient, ArchipelagoError};
+use archipelago_rs::protocol::{
+    Bounce, ClientMessage, Connected, GetDataPackage, ItemsHandlingFlags, JSONColor,
+    JSONMessagePart, PrintJSON, ServerMessage,
+};
+use owo_colors::OwoColorize;
+use serde_json::{json, Value};
+use std::fs::remove_file;
+use std::sync::atomic::AtomicI64;
+use std::sync::atomic::Ordering;
+use std::sync::{LazyLock, RwLock};
+use std::time::{SystemTime, UNIX_EPOCH};
+use tokio::sync::Mutex;
 
 /// Current connections slot number
-pub static SLOT_NUMBER: AtomicI32 = AtomicI32::new(-1);
-pub static TEAM_NUMBER: AtomicI32 = AtomicI32::new(-1);
-pub static CONNECTED: RwLock<Option<Connected>> = RwLock::new(None);
-pub static CLIENT: LazyLock<Mutex<Option<ArchipelagoClient>>> =
-    LazyLock::new(|| Mutex::new(None));
+pub static SLOT_NUMBER: AtomicI64 = AtomicI64::new(-1);
+pub static TEAM_NUMBER: AtomicI64 = AtomicI64::new(-1);
+pub static CONNECTED: RwLock<Option<Connected<Value>>> = RwLock::new(None);
+pub static CLIENT: LazyLock<Mutex<Option<ArchipelagoClient>>> = LazyLock::new(|| Mutex::new(None));
 
 pub const DEATH_LINK: &str = "DeathLink";
 
@@ -46,7 +49,7 @@ pub async fn send_deathlink_message(
     Ok(())
 }
 
-pub fn handle_print_json(print_json: PrintJSON, con_opt: &Option<Connected>) -> String {
+pub fn handle_print_json(print_json: PrintJSON, con_opt: &Option<Connected<Value>>) -> String {
     let mut final_message: String = "".to_string();
     match print_json {
         PrintJSON::ItemSend {
@@ -175,7 +178,7 @@ pub fn handle_print_json(print_json: PrintJSON, con_opt: &Option<Connected>) -> 
                 final_message.push_str(&handle_message_part(message, con_opt));
             }
         }
-        PrintJSON::Text { data } => {
+        PrintJSON::Unknown { data } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message, con_opt));
             }
@@ -184,9 +187,9 @@ pub fn handle_print_json(print_json: PrintJSON, con_opt: &Option<Connected>) -> 
     final_message
 }
 
-fn handle_message_part(message: JSONMessagePart, con_opt: &Option<Connected>) -> String {
+fn handle_message_part(message: JSONMessagePart, con_opt: &Option<Connected<Value>>) -> String {
     match message {
-        JSONMessagePart::PlayerId { text } => match &con_opt {
+        JSONMessagePart::PlayerId { text, player } => match &con_opt {
             None => "<Connected is None>".to_string(),
             Some(con) => con.players[text.parse::<usize>().unwrap() - 1].name.clone(),
         },
@@ -219,7 +222,12 @@ fn handle_message_part(message: JSONMessagePart, con_opt: &Option<Connected>) ->
             flags,
             player,
         } => {
-            log::debug!("ItemName: {:?} Flags: {}, Player: {}", text, flags, player);
+            log::debug!(
+                "ItemName: {:?} Flags: {:?}, Player: {}",
+                text,
+                flags,
+                player
+            );
             text
         }
         JSONMessagePart::LocationId { text, player } => {
@@ -274,9 +282,7 @@ fn handle_message_part(message: JSONMessagePart, con_opt: &Option<Connected>) ->
 }
 
 /// Get the Archipelago Client as well as ensuring that DataPackage checksums ar valid
-pub async fn get_archipelago_client(
-    url: &String,
-) -> Result<ArchipelagoClient, ArchipelagoError> {
+pub async fn get_archipelago_client(url: &String) -> Result<ArchipelagoClient, ArchipelagoError> {
     if cache::check_for_cache_file() {
         // If the cache exists, then connect normally and verify the cache file
         let mut client = ArchipelagoClient::new(&url).await?;
@@ -305,7 +311,7 @@ pub async fn get_archipelago_client(
                             }
                             Some(received) => {
                                 return Err(ArchipelagoError::IllegalResponse {
-                                    received,
+                                    received: &received.type_name(),
                                     expected: "DataPackage",
                                 });
                             }
@@ -324,7 +330,7 @@ pub async fn get_archipelago_client(
             }
         }
     } else {
-        // If the cache file does not exist, then it needs to be acquired
+        // If the cache file does not exist, then it needs to be acquired (TODO Need to update this call)
         let client = ArchipelagoClient::with_data_package(&url, None).await?;
         match &client.data_package() {
             // Write the data package to a local cache file
@@ -356,7 +362,8 @@ pub async fn connect_local_archipelago_proxy<C: GameConfig>(
             C::GAME_NAME,
             "",
             None,
-            Option::from(0b111),
+            ItemsHandlingFlags::all(),
+            //Option::from(0b111),
             vec!["AP".to_string()],
         )
         .await?;
@@ -380,7 +387,10 @@ pub async fn connect_local_archipelago_proxy<C: GameConfig>(
         }
     }
 
-    let index = get_index(&ap_client.room_info().seed_name, SLOT_NUMBER.load(Ordering::SeqCst));
+    let index = get_index(
+        &ap_client.room_info().seed_name,
+        SLOT_NUMBER.load(Ordering::SeqCst),
+    );
     item_sync::send_offline_checks(&mut ap_client, index)
         .await
         .unwrap();

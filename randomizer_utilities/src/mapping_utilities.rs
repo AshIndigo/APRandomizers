@@ -14,7 +14,7 @@ pub struct LocationData {
     #[serde(default)]
     item_id: Option<i64>,
     // Slot ID for recipient
-    owner: i32,
+    owner: i64,
 }
 
 impl LocationData {
@@ -86,7 +86,7 @@ pub fn get_own_slot_name() -> Result<String, Box<dyn std::error::Error>> {
     get_slot_name(SLOT_NUMBER.load(Ordering::SeqCst))
 }
 
-pub fn get_slot_name(slot: i32) -> Result<String, Box<dyn std::error::Error>> {
+pub fn get_slot_name(slot: i64) -> Result<String, Box<dyn std::error::Error>> {
     let uslot = slot as usize;
     match CONNECTED.read() {
         Ok(conn_opt) => {

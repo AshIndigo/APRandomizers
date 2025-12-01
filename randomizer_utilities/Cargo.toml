@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 archipelago_rs = { path = "../archipelago_rs" }
 log = {workspace = true}
-windows = { workspace = true, features = ["Win32_System_LibraryLoader", "Win32_System_Diagnostics_Debug", "Win32_System_Kernel"] }
+windows = { workspace = true, features = ["Win32_System_LibraryLoader", "Win32_System_Diagnostics_Debug", "Win32_System_Kernel", "Win32_System_Memory_NonVolatile"] }
 log4rs = "1.4.0"
 figment = { version = "0.10.19", features = ["toml"] }
 serde = { version = "1.0.228", features = ["derive"] }
