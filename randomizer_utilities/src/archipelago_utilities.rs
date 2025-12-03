@@ -330,21 +330,28 @@ pub async fn get_archipelago_client(url: &String) -> Result<ArchipelagoClient, A
             }
         }
     } else {
-        // If the cache file does not exist, then it needs to be acquired (TODO Need to update this call)
-        let client = ArchipelagoClient::with_data_package(&url, None).await?;
-        match &client.data_package() {
-            // Write the data package to a local cache file
-            None => {
-                log::error!("No data package found");
-                Err(ArchipelagoError::ConnectionClosed)
+        // If the cache file does not exist, then it needs to be acquired
+        let mut client = ArchipelagoClient::with_data_package(&url, None).await?;
+        client
+            .send(ClientMessage::GetDataPackage(GetDataPackage {
+                games: Some(client.room_info().games.clone()),
+            }))
+            .await?;
+        match client.recv().await? {
+            Some(ServerMessage::DataPackage(pkg)) => {
+                cache::write_cache(&pkg.data).unwrap_or_else(|err| {
+                    log::error!("Failed to write cache: {}", err)
+                });
             }
-            Some(dp) => {
-                cache::write_cache(&dp)
-                    .await
-                    .unwrap_or_else(|err| log::error!("Failed to write cache: {}", err));
-                Ok(client)
+            Some(received) => {
+                return Err(ArchipelagoError::IllegalResponse {
+                    received: &received.type_name(),
+                    expected: "DataPackage",
+                });
             }
+            None => return Err(ArchipelagoError::ConnectionClosed),
         }
+        Ok(client)
     }
 }
 

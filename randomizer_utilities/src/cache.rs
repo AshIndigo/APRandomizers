@@ -71,7 +71,7 @@ pub fn find_checksum_errors(room_info: &RoomInfo) -> Result<(), Box<dyn Error>> 
 }
 
 /// Write the DataPackage to a JSON file
-pub async fn write_cache(data: &&&DataPackageObject) -> Result<(), Box<dyn Error>> {
+pub fn write_cache(data: &DataPackageObject) -> Result<(), Box<dyn Error>> {
     fs::write(
         CACHE_FILENAME,
         serde_json::to_string_pretty(&data)?.as_bytes(),

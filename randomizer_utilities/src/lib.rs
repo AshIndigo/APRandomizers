@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::ffi::OsStr;
 use std::{fs, ptr};
+use std::fmt::Display;
 use std::os::windows::ffi::OsStrExt;
 use std::path::Path;
 use std::sync::OnceLock;
@@ -15,6 +16,7 @@ use log4rs::config::{Appender, Logger, Root};
 use log4rs::encode::pattern::PatternEncoder;
 use log4rs::{Config, Handle};
 use log::LevelFilter;
+use serde::{Deserialize, Serialize};
 use tokio::sync;
 use tokio::sync::mpsc::{Receiver, Sender};
 use windows::core::PCWSTR;
@@ -200,5 +202,23 @@ pub unsafe fn replace_single_byte(offset_orig: usize, new_value: u8) {
         Err(err) => {
             log::error!("Failed to modify byte at offset: {offset_orig:X}: {err:?}");
         }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct APVersion {
+    pub major: i64,
+    pub minor: i64,
+    pub build: i64,
+}
+
+impl Display for APVersion {
+    //noinspection DuplicatedCode - Shares the same display code as NetworkVersion
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            format!("{}.{}.{}", self.major, self.minor, self.build)
+        )
     }
 }
