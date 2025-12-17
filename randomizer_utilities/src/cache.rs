@@ -1,6 +1,5 @@
 use archipelago_rs::protocol::{DataPackageObject, RoomInfo};
 use serde::Deserialize;
-use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Display;
 use std::fs;
@@ -86,56 +85,11 @@ pub fn read_cache() -> Result<DataPackageObject, Box<dyn Error>> {
     Ok(cache)
 }
 
-pub struct DataPackageWrapper {
-    pub dp: DataPackageObject,
-    pub item_id_to_name: HashMap<String, HashMap<i64, String>>,
-    pub location_id_to_name: HashMap<String, HashMap<i64, String>>,
-}
-
-impl DataPackageWrapper {
-    fn new(dp: DataPackageObject) -> Self {
-        // TODO Maybe I should try to only add entries when they are requested
-        let item_id_to_name = {
-            let mut game_map = HashMap::<String, HashMap<i64, String>>::new();
-            for (game_name, data) in &dp.games {
-                game_map.insert(
-                    game_name.clone(),
-                    data.item_name_to_id
-                        .clone()
-                        .into_iter()
-                        .map(|(k, v)| (v, k))
-                        .collect(),
-                );
-            }
-            game_map
-        };
-        let location_id_to_name = {
-            let mut game_map = HashMap::<String, HashMap<i64, String>>::new();
-            for (game_name, data) in &dp.games {
-                game_map.insert(
-                    game_name.clone(),
-                    data.location_name_to_id
-                        .clone()
-                        .into_iter()
-                        .map(|(k, v)| (v, k))
-                        .collect(),
-                );
-            }
-            game_map
-        };
-        Self {
-            dp,
-            item_id_to_name,
-            location_id_to_name,
-        }
-    }
-}
-
-pub static DATA_PACKAGE: LazyLock<RwLock<Option<DataPackageWrapper>>> =
+pub static DATA_PACKAGE: LazyLock<RwLock<Option<DataPackageObject>>> =
     LazyLock::new(|| RwLock::new(None));
 
 pub fn set_data_package(value: DataPackageObject) -> Result<(), Box<dyn Error>> {
-    *DATA_PACKAGE.write()? = Some(DataPackageWrapper::new(value));
+    *DATA_PACKAGE.write()? = Some(value);
     Ok(())
 }
 

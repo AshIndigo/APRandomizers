@@ -1,19 +1,15 @@
 use crate::cache::{ChecksumError, DATA_PACKAGE};
 use crate::item_sync::get_index;
 use crate::mapping_utilities::GameConfig;
-use crate::{cache, item_sync, mapping_utilities};
+use crate::{cache, item_sync};
 use archipelago_rs::client::{ArchipelagoClient, ArchipelagoError};
-use archipelago_rs::protocol::{
-    Bounce, ClientMessage, Connected, GetDataPackage, ItemsHandlingFlags, JSONColor,
-    JSONMessagePart, PrintJSON, ServerMessage,
-};
+use archipelago_rs::protocol::{ClientMessage, Connected, GetDataPackage, ItemsHandlingFlags, RichMessageColor, RichMessagePart, RichPrint, ServerMessage};
 use owo_colors::OwoColorize;
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::fs::remove_file;
 use std::sync::atomic::AtomicI64;
 use std::sync::atomic::Ordering;
 use std::sync::{LazyLock, RwLock};
-use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::Mutex;
 
 /// Current connections slot number
@@ -28,31 +24,10 @@ pub struct DeathLinkData {
     pub cause: String,
 }
 
-/// Sends a Bounce packet containing DeathLink Info as defined by the DeathLinkData struct
-pub async fn send_deathlink_message(
-    client: &mut ArchipelagoClient,
-    data: DeathLinkData,
-) -> Result<(), ArchipelagoError> {
-    let name = mapping_utilities::get_own_slot_name().unwrap();
-    client
-        .send(ClientMessage::Bounce(Bounce {
-            games: Some(vec![]),
-            slots: Some(vec![]),
-            tags: Some(vec![DEATH_LINK.to_string()]),
-            data: json!({
-                "time": SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs_f32(),
-                "source": name,
-                "cause": data.cause
-            }),
-        }))
-        .await?;
-    Ok(())
-}
-
-pub fn handle_print_json(print_json: PrintJSON, con_opt: &Option<Connected<Value>>) -> String {
+pub fn handle_print_json(print_json: RichPrint, con_opt: &Option<Connected<Value>>) -> String {
     let mut final_message: String = "".to_string();
     match print_json {
-        PrintJSON::ItemSend {
+        RichPrint::ItemSend {
             data,
             receiving: _receiving,
             item: _item,
@@ -61,7 +36,7 @@ pub fn handle_print_json(print_json: PrintJSON, con_opt: &Option<Connected<Value
                 final_message.push_str(&handle_message_part(message, con_opt));
             }
         }
-        PrintJSON::ItemCheat {
+        RichPrint::ItemCheat {
             data,
             receiving: _receiving,
             item: _item,
@@ -71,7 +46,7 @@ pub fn handle_print_json(print_json: PrintJSON, con_opt: &Option<Connected<Value
                 final_message.push_str(&handle_message_part(message, con_opt));
             }
         }
-        PrintJSON::Hint {
+        RichPrint::Hint {
             data,
             receiving: _receiving,
             item: _item,
@@ -81,7 +56,7 @@ pub fn handle_print_json(print_json: PrintJSON, con_opt: &Option<Connected<Value
                 final_message.push_str(&handle_message_part(message, con_opt));
             }
         }
-        PrintJSON::Join {
+        RichPrint::Join {
             data,
             team: _team,
             slot: _slot,
@@ -91,7 +66,7 @@ pub fn handle_print_json(print_json: PrintJSON, con_opt: &Option<Connected<Value
                 final_message.push_str(&handle_message_part(message, con_opt));
             }
         }
-        PrintJSON::Part {
+        RichPrint::Part {
             data,
             team: _team,
             slot: _slot,
@@ -100,7 +75,7 @@ pub fn handle_print_json(print_json: PrintJSON, con_opt: &Option<Connected<Value
                 final_message.push_str(&handle_message_part(message, con_opt));
             }
         }
-        PrintJSON::Chat {
+        RichPrint::Chat {
             data,
             team: _team,
             slot: _slot,
@@ -110,7 +85,7 @@ pub fn handle_print_json(print_json: PrintJSON, con_opt: &Option<Connected<Value
                 final_message.push_str(&handle_message_part(message, con_opt));
             }
         }
-        PrintJSON::ServerChat {
+        RichPrint::ServerChat {
             data,
             message: _message,
         } => {
@@ -118,12 +93,12 @@ pub fn handle_print_json(print_json: PrintJSON, con_opt: &Option<Connected<Value
                 final_message.push_str(&handle_message_part(message, con_opt));
             }
         }
-        PrintJSON::Tutorial { data } => {
+        RichPrint::Tutorial { data } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message, con_opt));
             }
         }
-        PrintJSON::TagsChanged {
+        RichPrint::TagsChanged {
             data,
             team: _team,
             slot: _slot,
@@ -133,17 +108,17 @@ pub fn handle_print_json(print_json: PrintJSON, con_opt: &Option<Connected<Value
                 final_message.push_str(&handle_message_part(message, con_opt));
             }
         }
-        PrintJSON::CommandResult { data } => {
+        RichPrint::CommandResult { data } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message, con_opt));
             }
         }
-        PrintJSON::AdminCommandResult { data } => {
+        RichPrint::AdminCommandResult { data } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message, con_opt));
             }
         }
-        PrintJSON::Goal {
+        RichPrint::Goal {
             data,
             team: _team,
             slot: _slot,
@@ -152,7 +127,7 @@ pub fn handle_print_json(print_json: PrintJSON, con_opt: &Option<Connected<Value
                 final_message.push_str(&handle_message_part(message, con_opt));
             }
         }
-        PrintJSON::Release {
+        RichPrint::Release {
             data,
             team: _team,
             slot: _slot,
@@ -161,7 +136,7 @@ pub fn handle_print_json(print_json: PrintJSON, con_opt: &Option<Connected<Value
                 final_message.push_str(&handle_message_part(message, con_opt));
             }
         }
-        PrintJSON::Collect {
+        RichPrint::Collect {
             data,
             team: _team,
             slot: _slot,
@@ -170,7 +145,7 @@ pub fn handle_print_json(print_json: PrintJSON, con_opt: &Option<Connected<Value
                 final_message.push_str(&handle_message_part(message, con_opt));
             }
         }
-        PrintJSON::Countdown {
+        RichPrint::Countdown {
             data,
             countdown: _countdown,
         } => {
@@ -178,7 +153,7 @@ pub fn handle_print_json(print_json: PrintJSON, con_opt: &Option<Connected<Value
                 final_message.push_str(&handle_message_part(message, con_opt));
             }
         }
-        PrintJSON::Unknown { data } => {
+        RichPrint::Unknown { data } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message, con_opt));
             }
@@ -187,37 +162,34 @@ pub fn handle_print_json(print_json: PrintJSON, con_opt: &Option<Connected<Value
     final_message
 }
 
-fn handle_message_part(message: JSONMessagePart, con_opt: &Option<Connected<Value>>) -> String {
+fn handle_message_part(message: RichMessagePart, con_opt: &Option<Connected<Value>>) -> String {
     match message {
-        JSONMessagePart::PlayerId { text, player } => match &con_opt {
+        RichMessagePart::PlayerId { id, name } => match &con_opt {
             None => "<Connected is None>".to_string(),
-            Some(con) => con.players[text.parse::<usize>().unwrap() - 1].name.clone(),
+            Some(con) => con.players[id as usize - 1].name.clone(),
         },
-        JSONMessagePart::PlayerName { text } => text,
-        JSONMessagePart::ItemId {
-            text,
-            flags: _flags,
-            player,
+        RichMessagePart::PlayerName { text } => text,
+        RichMessagePart::ItemId {
+            id, flags, player, name
         } => {
             if let Some(data_package) = DATA_PACKAGE.read().unwrap().as_ref() {
                 match con_opt {
                     None => "<Connected is None>".to_string(),
                     Some(con) => {
                         let game = &con.slot_info[&player].game.clone();
-                        data_package
-                            .item_id_to_name
+                        data_package.games
                             .get(game)
                             .unwrap()
-                            .get(&text.parse::<i64>().unwrap())
-                            .unwrap()
-                            .clone()
+                            .item_name_to_id
+                            .get_by_right(&id)
+                            .unwrap().to_string()
                     }
                 }
             } else {
                 "<Data package unavailable>".parse().unwrap()
             }
         }
-        JSONMessagePart::ItemName {
+        RichMessagePart::ItemName {
             text,
             flags,
             player,
@@ -230,54 +202,54 @@ fn handle_message_part(message: JSONMessagePart, con_opt: &Option<Connected<Valu
             );
             text
         }
-        JSONMessagePart::LocationId { text, player } => {
+        RichMessagePart::LocationId { id, player, name } => {
             if let Some(data_package) = DATA_PACKAGE.read().unwrap().as_ref() {
                 match con_opt {
                     None => "<Connected is None>".to_string(),
                     Some(con) => {
                         let game = &con.slot_info[&player].game.clone();
                         data_package
-                            .location_id_to_name
+                            .games
                             .get(game)
                             .unwrap()
-                            .get(&text.parse::<i64>().unwrap())
-                            .unwrap()
-                            .clone()
+                            .location_name_to_id
+                            .get_by_right(&id)
+                            .unwrap().to_string()
                     }
                 }
             } else {
                 "<Data package unavailable>".parse().unwrap()
             }
         }
-        JSONMessagePart::LocationName { text, player } => {
+        RichMessagePart::LocationName { text, player } => {
             log::debug!("LocationName: {:?}, Player: {}", text, player);
             text
         }
-        JSONMessagePart::EntranceName { text } => text,
-        JSONMessagePart::Color { text, color } => {
+        RichMessagePart::EntranceName { text } => text,
+        RichMessagePart::Color { text, color } => {
             match color {
                 // This looks ugly, but I'm too lazy to have a better idea
-                JSONColor::Bold => text.bold().to_string(),
-                JSONColor::Underline => text.underline().to_string(),
-                JSONColor::Black => text.black().to_string(),
-                JSONColor::Red => text.red().to_string(),
-                JSONColor::Green => text.green().to_string(),
-                JSONColor::Yellow => text.yellow().to_string(),
-                JSONColor::Blue => text.blue().to_string(),
-                JSONColor::Magenta => text.magenta().to_string(),
-                JSONColor::Cyan => text.cyan().to_string(),
-                JSONColor::White => text.white().to_string(),
-                JSONColor::BlackBg => text.on_black().to_string(),
-                JSONColor::RedBg => text.on_red().to_string(),
-                JSONColor::GreenBg => text.on_green().to_string(),
-                JSONColor::YellowBg => text.on_yellow().to_string(),
-                JSONColor::BlueBg => text.on_blue().to_string(),
-                JSONColor::MagentaBg => text.on_magenta().to_string(),
-                JSONColor::CyanBg => text.on_cyan().to_string(),
-                JSONColor::WhiteBg => text.on_white().to_string(),
+                RichMessageColor::Bold => text.bold().to_string(),
+                RichMessageColor::Underline => text.underline().to_string(),
+                RichMessageColor::Black => text.black().to_string(),
+                RichMessageColor::Red => text.red().to_string(),
+                RichMessageColor::Green => text.green().to_string(),
+                RichMessageColor::Yellow => text.yellow().to_string(),
+                RichMessageColor::Blue => text.blue().to_string(),
+                RichMessageColor::Magenta => text.magenta().to_string(),
+                RichMessageColor::Cyan => text.cyan().to_string(),
+                RichMessageColor::White => text.white().to_string(),
+                RichMessageColor::BlackBg => text.on_black().to_string(),
+                RichMessageColor::RedBg => text.on_red().to_string(),
+                RichMessageColor::GreenBg => text.on_green().to_string(),
+                RichMessageColor::YellowBg => text.on_yellow().to_string(),
+                RichMessageColor::BlueBg => text.on_blue().to_string(),
+                RichMessageColor::MagentaBg => text.on_magenta().to_string(),
+                RichMessageColor::CyanBg => text.on_cyan().to_string(),
+                RichMessageColor::WhiteBg => text.on_white().to_string(),
             }
         }
-        JSONMessagePart::Text { text } => text,
+        RichMessagePart::Text { text } => text,
     }
 }
 

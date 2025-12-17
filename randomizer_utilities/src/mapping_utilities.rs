@@ -56,15 +56,15 @@ impl LocationData {
             };
             match self.item_id {
                 None => Err("Item ID is None, cannot get name".into()),
-                Some(item_id) => match cache.item_id_to_name.get(game_name) {
+                Some(item_id) => match cache.games.get(game_name) {
                     None => Err(format!("{} does not exist in cache", game_name).into()),
-                    Some(item_id_to_name) => match item_id_to_name.get(&(item_id)) {
+                    Some(game_data) => match game_data.item_name_to_id.get_by_right(&(item_id)) {
                         None => Err(format!(
                             "{:?} does not exist in {}'s item cache",
                             item_id, game_name
                         )
                             .into()),
-                        Some(name) => Ok(name.clone()),
+                        Some(name) => Ok(name.to_string()),
                     },
                 },
             }
@@ -94,7 +94,7 @@ pub fn get_slot_name(slot: i64) -> Result<String, Box<dyn std::error::Error>> {
                 if slot == 0 {
                     return Ok("Server".to_string());
                 }
-                if (slot < 0) || (uslot - 1 >= connected.players.len()) {
+                if (slot < 0) || (uslot > connected.players.len()) {
                     return Err(format!("Slot index not valid: {}", slot).into());
                 }
                 Ok(connected.players[uslot - 1].name.clone())
