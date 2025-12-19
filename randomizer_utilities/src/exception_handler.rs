@@ -1,10 +1,10 @@
-
-
 use std::{ffi::c_void, path::Path};
-use windows::core::PCWSTR;
-use windows::Win32::Foundation::{HMODULE};
+use windows::Win32::Foundation::HMODULE;
 use windows::Win32::System::Diagnostics::Debug::{AddVectoredExceptionHandler, EXCEPTION_POINTERS};
-use windows::Win32::System::LibraryLoader::{GetModuleFileNameW, GetModuleHandleExW, GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS};
+use windows::Win32::System::LibraryLoader::{
+    GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, GetModuleFileNameW, GetModuleHandleExW,
+};
+use windows::core::PCWSTR;
 
 // There's probably more to add, but figured this would be good to start
 fn exception_code_to_str(code: u32) -> &'static str {
@@ -28,9 +28,10 @@ unsafe fn module_from_address(addr: *const c_void) -> Option<(HMODULE, String)> 
     unsafe {
         if GetModuleHandleExW(
             GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
-            PCWSTR::from_raw( addr as *const u16),
+            PCWSTR::from_raw(addr as *const u16),
             &mut hmod,
-        ).is_err()
+        )
+        .is_err()
         {
             return None;
         }
@@ -68,7 +69,8 @@ unsafe extern "system" fn exception_handler(info: *mut EXCEPTION_POINTERS) -> i3
             return 0;
         }
 
-        if code.0 == 0xE06D7363u32 as i32 { // TODO, this is jank af
+        if code.0 == 0xE06D7363u32 as i32 {
+            // TODO, this is jank af
             log::error!("C++ Exception detected at {:?}", record.ExceptionAddress);
 
             // ExceptionInformation[0] is a magic number for C++ EH
@@ -82,10 +84,11 @@ unsafe extern "system" fn exception_handler(info: *mut EXCEPTION_POINTERS) -> i3
 
             if !desc.is_null() {
                 let type_name_ptr = *(desc as *const *const i8);
-                if !type_name_ptr.is_null() {
-                    if let Ok(cstr) = std::ffi::CStr::from_ptr(type_name_ptr).to_str() {
-                        log::error!("C++ exception type: {}", cstr);
-                    }
+
+                if !type_name_ptr.is_null()
+                    && let Ok(cstr) = std::ffi::CStr::from_ptr(type_name_ptr).to_str()
+                {
+                    log::error!("C++ exception type: {}", cstr);
                 }
             }
         }

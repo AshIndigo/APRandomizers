@@ -180,7 +180,11 @@ where
         Ok(res)
     }
 }
-
+/// Replaces a single byte at the specified address
+///
+/// # Safety
+///
+/// Relies on me not screwing up
 pub unsafe fn replace_single_byte(offset_orig: usize, new_value: u8) {
     let offset = offset_orig as *mut u8;
     match modify_protected_memory(
@@ -205,7 +209,7 @@ pub unsafe fn replace_single_byte(offset_orig: usize, new_value: u8) {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
 pub struct APVersion {
     pub major: i64,
     pub minor: i64,
@@ -213,12 +217,10 @@ pub struct APVersion {
 }
 
 impl Display for APVersion {
-    //noinspection DuplicatedCode - Shares the same display code as NetworkVersion
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{}",
-            format!("{}.{}.{}", self.major, self.minor, self.build)
+            "{}.{}.{}", self.major, self.minor, self.build
         )
     }
 }

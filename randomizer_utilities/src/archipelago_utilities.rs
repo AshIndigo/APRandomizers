@@ -257,7 +257,7 @@ fn handle_message_part(message: RichMessagePart, con_opt: &Option<Connected<Valu
 pub async fn get_archipelago_client(url: &String) -> Result<ArchipelagoClient, ArchipelagoError> {
     if cache::check_for_cache_file() {
         // If the cache exists, then connect normally and verify the cache file
-        let mut client = ArchipelagoClient::new(&url).await?;
+        let mut client = ArchipelagoClient::new(url).await?;
         match cache::find_checksum_errors(client.room_info()) {
             Ok(()) => {
                 log::info!("Checksums check out!");
@@ -283,7 +283,7 @@ pub async fn get_archipelago_client(url: &String) -> Result<ArchipelagoClient, A
                             }
                             Some(received) => {
                                 return Err(ArchipelagoError::IllegalResponse {
-                                    received: &received.type_name(),
+                                    received: received.type_name(),
                                     expected: "DataPackage",
                                 });
                             }
@@ -303,7 +303,7 @@ pub async fn get_archipelago_client(url: &String) -> Result<ArchipelagoClient, A
         }
     } else {
         // If the cache file does not exist, then it needs to be acquired
-        let mut client = ArchipelagoClient::with_data_package(&url, None).await?;
+        let mut client = ArchipelagoClient::with_data_package(url, None).await?;
         client
             .send(ClientMessage::GetDataPackage(GetDataPackage {
                 games: Some(client.room_info().games.clone()),
@@ -317,7 +317,7 @@ pub async fn get_archipelago_client(url: &String) -> Result<ArchipelagoClient, A
             }
             Some(received) => {
                 return Err(ArchipelagoError::IllegalResponse {
-                    received: &received.type_name(),
+                    received: received.type_name(),
                     expected: "DataPackage",
                 });
             }
