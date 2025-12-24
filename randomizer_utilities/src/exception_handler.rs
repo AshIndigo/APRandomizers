@@ -68,8 +68,8 @@ unsafe extern "system" fn exception_handler(info: *mut EXCEPTION_POINTERS) -> i3
         if code.is_ok() {
             return 0;
         }
-
-        if code.0 == 0xE06D7363u32 as i32 {
+        const CPP_EXCEPTION: i32 = 0xE06D7363u32 as i32;
+        if code.0 == CPP_EXCEPTION {
             // TODO, this is jank af
             log::error!("C++ Exception detected at {:?}", record.ExceptionAddress);
 
@@ -95,6 +95,7 @@ unsafe extern "system" fn exception_handler(info: *mut EXCEPTION_POINTERS) -> i3
 
         // Get the module+offset
         if let Some((base, name)) = module_from_address(address as *const c_void) {
+            // TODO I could mention a hash error here if one has occurred
             let offset = address - base.0 as usize;
             log::error!(
                 "Exception {:#X} ({}) at {:#p} in {}+0x{:X}",
