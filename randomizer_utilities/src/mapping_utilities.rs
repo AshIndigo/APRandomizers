@@ -1,5 +1,3 @@
-use crate::archipelago_utilities::{CONNECTED, SLOT_NUMBER};
-use crate::cache;
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::Ordering;
 
@@ -17,7 +15,7 @@ pub struct LocationData {
     owner: i64,
 }
 
-impl LocationData {
+/*impl LocationData {
     fn is_item_remote(&self) -> bool {
         self.owner != SLOT_NUMBER.load(Ordering::SeqCst)
     }
@@ -80,28 +78,28 @@ impl LocationData {
             self.get_item_name()?
         ))
     }
-}
+}*/
 
-pub fn get_own_slot_name() -> Result<String, Box<dyn std::error::Error>> {
-    get_slot_name(SLOT_NUMBER.load(Ordering::SeqCst))
-}
-
-pub fn get_slot_name(slot: i64) -> Result<String, Box<dyn std::error::Error>> {
-    let uslot = slot as usize;
-    match CONNECTED.read() {
-        Ok(conn_opt) => {
-            if let Some(connected) = conn_opt.as_ref() {
-                if slot == 0 {
-                    return Ok("Server".to_string());
-                }
-                if (slot < 0) || (uslot > connected.players.len()) {
-                    return Err(format!("Slot index not valid: {}", slot).into());
-                }
-                Ok(connected.players[uslot - 1].name.clone())
-            } else {
-                Err("Not connected, cannot get name".into())
-            }
-        }
-        Err(err) => Err(err.into()),
-    }
-}
+// pub fn get_own_slot_name() -> Result<String, Box<dyn std::error::Error>> {
+//     get_slot_name(SLOT_NUMBER.load(Ordering::SeqCst))
+// }
+// 
+// pub fn get_slot_name(slot: i64) -> Result<String, Box<dyn std::error::Error>> {
+//     let uslot = slot as usize;
+//     match CONNECTED.read() {
+//         Ok(conn_opt) => {
+//             if let Some(connected) = conn_opt.as_ref() {
+//                 if slot == 0 {
+//                     return Ok("Server".to_string());
+//                 }
+//                 if (slot < 0) || (uslot > connected.players.len()) {
+//                     return Err(format!("Slot index not valid: {}", slot).into());
+//                 }
+//                 Ok(connected.players[uslot - 1].name.clone())
+//             } else {
+//                 Err("Not connected, cannot get name".into())
+//             }
+//         }
+//         Err(err) => Err(err.into()),
+//     }
+// }

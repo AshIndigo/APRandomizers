@@ -1,9 +1,10 @@
 use std::error::Error;
 use std::ffi::OsStr;
-use std::{fs, ptr};
+use std::{fs, ptr, sync};
 use std::fmt::Display;
 use std::os::windows::ffi::OsStrExt;
 use std::path::Path;
+use std::sync::mpsc::{Receiver, Sender};
 use std::sync::OnceLock;
 use figment::Figment;
 use figment::providers::{Format, Toml};
@@ -17,14 +18,12 @@ use log4rs::encode::pattern::PatternEncoder;
 use log4rs::{Config, Handle};
 use log::LevelFilter;
 use serde::{Deserialize, Serialize};
-use tokio::sync;
-use tokio::sync::mpsc::{Receiver, Sender};
 use windows::core::PCWSTR;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::System::Memory::{VirtualProtect, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS};
 use windows::Win32::Foundation::GetLastError;
 
-pub mod cache;
+//pub mod cache;
 pub mod exception_handler;
 pub mod item_sync;
 pub mod archipelago_utilities;
@@ -150,8 +149,8 @@ where T: Default + serde::ser::Serialize + serde::de::Deserialize<'static> {
     }
 }
 
-pub fn setup_channel_pair<T>(channel: &OnceLock<Sender<T>>, buffer_count: Option<usize>) -> Receiver<T>  {
-    let (tx, rx) = sync::mpsc::channel(buffer_count.unwrap_or(8));
+pub fn setup_channel_pair<T>(channel: &OnceLock<Sender<T>>) -> Receiver<T>  {
+    let (tx, rx) = sync::mpsc::channel();
     channel.set(tx).expect("TX already initialized");
     rx
 }

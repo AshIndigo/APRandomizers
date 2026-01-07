@@ -1,11 +1,11 @@
-use archipelago_rs::client::ArchipelagoClient;
+use archipelago_rs::Client;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
 use std::io::{BufReader, Write};
 use std::path::Path;
-use std::sync::atomic::{AtomicI64};
+use std::sync::atomic::AtomicI64;
 use std::sync::{Mutex, OnceLock};
 
 const SYNC_FILE: &str = "archipelago.json";
@@ -57,19 +57,12 @@ pub fn read_save_data() -> Result<SyncData, Box<dyn Error>> {
     }
 }
 
-pub fn get_index(seed_name: &String, slot_number: i64) -> String {
-    format!(
-        "{}_{}",
-        seed_name,
-        slot_number
-    )
+pub fn get_index(seed_name: &str, slot_number: u32) -> String {
+    format!("{}_{}", seed_name, slot_number)
 }
 
 /// Adds an offline location to be sent when room connection is restored
-pub async fn add_offline_check(
-    location: i64,
-    index: String
-) -> Result<(), Box<dyn Error>> {
+pub async fn add_offline_check(location: i64, index: String) -> Result<(), Box<dyn Error>> {
     let mut sync_data = get_sync_data().lock()?;
     if sync_data.room_sync_info.contains_key(&index) {
         sync_data
@@ -87,24 +80,18 @@ pub async fn add_offline_check(
     Ok(())
 }
 
-pub async fn send_offline_checks(
-    client: &mut ArchipelagoClient,
-    index: String
-) -> Result<(), Box<dyn Error>> {
+pub fn send_offline_checks(client: &mut Client, index: String) -> Result<(), Box<dyn Error>> {
     log::debug!("Attempting to send offline checks");
     let mut sync_data = get_sync_data().lock()?;
     if sync_data.room_sync_info.contains_key(&index) {
-        match client
-            .location_checks(
-                sync_data
-                    .room_sync_info
-                    .get(&index)
-                    .unwrap()
-                    .offline_checks
-                    .clone(),
-            )
-            .await
-        {
+        match client.mark_checked(
+            sync_data
+                .room_sync_info
+                .get(&index)
+                .unwrap()
+                .offline_checks
+                .clone(),
+        ) {
             Ok(_) => {
                 log::info!("Successfully sent offline checks");
                 sync_data
