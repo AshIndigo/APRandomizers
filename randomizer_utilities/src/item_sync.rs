@@ -62,7 +62,7 @@ pub fn get_index(seed_name: &str, slot_number: u32) -> String {
 }
 
 /// Adds an offline location to be sent when room connection is restored
-pub async fn add_offline_check(location: i64, index: String) -> Result<(), Box<dyn Error>> {
+pub fn add_offline_check(location: i64, index: String) -> Result<(), Box<dyn Error>> {
     let mut sync_data = get_sync_data().lock()?;
     if sync_data.room_sync_info.contains_key(&index) {
         sync_data

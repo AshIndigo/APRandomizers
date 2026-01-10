@@ -1,15 +1,10 @@
-use std::marker::PhantomData;
-use archipelago_rs::{Connection, ConnectionOptions, Event, ItemHandling, LocatedItem, Player, Print, RichText, TextColor, UpdatedField};
-use serde_json::Value;
+use archipelago_rs::{LocatedItem, Print, RichText, TextColor};
 use owo_colors::OwoColorize;
-use crate::mapping_utilities::GameConfig;
-
-pub const DEATH_LINK: &str = "DeathLink";
 
 pub struct DeathLinkData {
     pub cause: String,
 }
-// TODO - Refactor
+
 pub fn handle_print(print: Print) -> String {
     let mut final_message: String = "".to_string();
     match print {
@@ -39,21 +34,21 @@ pub fn handle_print(print: Print) -> String {
             }
         }
         Print::Join {
-            data, player, tags,
+            data, player: _, tags: _,
         } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message));
             }
         }
         Print::Part {
-            data, player
+            data, player: _
         } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message));
             }
         }
         Print::Chat {
-            data, player, message
+            data, player: _, message: _
         } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message));
@@ -73,7 +68,7 @@ pub fn handle_print(print: Print) -> String {
             }
         }
         Print::TagsChanged {
-            data, player, tags
+            data, player: _, tags: _
         } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message));
@@ -90,21 +85,21 @@ pub fn handle_print(print: Print) -> String {
             }
         }
         Print::Goal {
-            data, player
+            data, player: _
         } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message));
             }
         }
         Print::Release {
-            data, player
+            data, player: _
         } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message));
             }
         }
         Print::Collect {
-            data, player
+            data, player: _
         } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message));
@@ -126,26 +121,20 @@ pub fn handle_print(print: Print) -> String {
     }
     final_message
 }
-// TODO - Refactor
+
 fn handle_message_part(message: RichText) -> String {
     match message {
         RichText::PlayerName(text) => text,
         RichText::Item {
             item,
-            player,
-            progression,
-            useful,
-            trap,
+            player: _,
+            progression: _,
+            useful: _,
+            trap: _,
         } => {
-            log::debug!(
-                "ItemName: {:?} Player: {}",
-                item.name(),
-                player
-            );
             item.to_string()
         }
-        RichText::Location { location, player } => {
-            log::debug!("LocationName: {:?}, Player: {}", location, player);
+        RichText::Location { location, player: _ } => {
             location.to_string()
         }
         RichText::EntranceName(text) => text,
@@ -179,6 +168,6 @@ fn handle_message_part(message: RichText) -> String {
     }
 }
 
-pub fn get_description(item: LocatedItem) -> String {
+pub fn get_description(item: &LocatedItem) -> String {
     format!("{}'s {}", item.receiver().name(), item.item().name())
 }
