@@ -23,9 +23,7 @@ use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::System::Memory::{VirtualProtect, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS};
 use windows::Win32::Foundation::GetLastError;
 
-//pub mod cache;
 pub mod exception_handler;
-pub mod item_sync;
 pub mod archipelago_utilities;
 pub mod mapping_utilities;
 pub mod ui_utilities;
