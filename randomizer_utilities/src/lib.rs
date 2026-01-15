@@ -1,30 +1,32 @@
-use std::error::Error;
-use std::ffi::OsStr;
-use std::{fs, ptr, sync};
-use std::fmt::Display;
-use std::os::windows::ffi::OsStrExt;
-use std::path::Path;
-use std::sync::mpsc::{Receiver, Sender};
-use std::sync::OnceLock;
 use figment::Figment;
 use figment::providers::{Format, Toml};
+use log::LevelFilter;
 use log4rs::append::console::ConsoleAppender;
+use log4rs::append::rolling_file::RollingFileAppender;
+use log4rs::append::rolling_file::policy::compound::CompoundPolicy;
 use log4rs::append::rolling_file::policy::compound::roll::fixed_window::FixedWindowRoller;
 use log4rs::append::rolling_file::policy::compound::trigger::onstartup::OnStartUpTrigger;
-use log4rs::append::rolling_file::policy::compound::CompoundPolicy;
-use log4rs::append::rolling_file::RollingFileAppender;
 use log4rs::config::{Appender, Logger, Root};
 use log4rs::encode::pattern::PatternEncoder;
 use log4rs::{Config, Handle};
-use log::LevelFilter;
 use serde::{Deserialize, Serialize};
-use windows::core::PCWSTR;
-use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows::Win32::System::Memory::{VirtualProtect, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS};
+use std::error::Error;
+use std::ffi::OsStr;
+use std::fmt::Display;
+use std::os::windows::ffi::OsStrExt;
+use std::path::Path;
+use std::sync::OnceLock;
+use std::sync::mpsc::{Receiver, Sender};
+use std::{fs, ptr, sync};
 use windows::Win32::Foundation::GetLastError;
+use windows::Win32::System::LibraryLoader::GetModuleHandleW;
+use windows::Win32::System::Memory::{
+    PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS, VirtualProtect,
+};
+use windows::core::PCWSTR;
 
-pub mod exception_handler;
 pub mod archipelago_utilities;
+pub mod exception_handler;
 pub mod mapping_utilities;
 pub mod ui_utilities;
 
@@ -109,12 +111,13 @@ where
     unsafe { *(address as *const T) }
 }
 
-
 /// Loads or create a config file with the given name and struct.
 ///
 /// This will also remake the config if the file cannot be read
 pub fn load_config<T>(config_name: &str) -> Result<T, Box<dyn Error>>
-where T: Default + serde::ser::Serialize + serde::de::Deserialize<'static> {
+where
+    T: Default + serde::ser::Serialize + serde::de::Deserialize<'static>,
+{
     if !fs::exists("archipelago")? {
         fs::create_dir("archipelago/")?;
     }
@@ -132,11 +135,10 @@ where T: Default + serde::ser::Serialize + serde::de::Deserialize<'static> {
         Ok(config) => Ok(config),
         Err(err) => {
             log::warn!("Failed to parse config: {err}. Backing up and regenerating.");
-            
+
             let backup_path = format!("archipelago/{}.old.toml", config_name);
             fs::rename(&config_path, &backup_path)?;
             log::info!("Old config backed up to {backup_path}");
-
 
             let toml_string =
                 toml::to_string(&T::default()).expect("Could not serialize default config");
@@ -147,7 +149,7 @@ where T: Default + serde::ser::Serialize + serde::de::Deserialize<'static> {
     }
 }
 
-pub fn setup_channel_pair<T>(channel: &OnceLock<Sender<T>>) -> Receiver<T>  {
+pub fn setup_channel_pair<T>(channel: &OnceLock<Sender<T>>) -> Receiver<T> {
     let (tx, rx) = sync::mpsc::channel();
     channel.set(tx).expect("TX already initialized");
     rx
@@ -215,9 +217,6 @@ pub struct APVersion {
 
 impl Display for APVersion {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}.{}.{}", self.major, self.minor, self.build
-        )
+        write!(f, "{}.{}.{}", self.major, self.minor, self.build)
     }
 }

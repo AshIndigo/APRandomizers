@@ -8,18 +8,12 @@ pub struct DeathLinkData {
 pub fn handle_print(print: Print) -> String {
     let mut final_message: String = "".to_string();
     match print {
-        Print::ItemSend {
-            data,
-            item: _item,
-        } => {
+        Print::ItemSend { data, item: _item } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message));
             }
         }
-        Print::ItemCheat {
-            data,
-            item: _item,
-        } => {
+        Print::ItemCheat { data, item: _item } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message));
             }
@@ -34,21 +28,23 @@ pub fn handle_print(print: Print) -> String {
             }
         }
         Print::Join {
-            data, player: _, tags: _,
+            data,
+            player: _,
+            tags: _,
         } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message));
             }
         }
-        Print::Part {
-            data, player: _
-        } => {
+        Print::Part { data, player: _ } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message));
             }
         }
         Print::Chat {
-            data, player: _, message: _
+            data,
+            player: _,
+            message: _,
         } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message));
@@ -68,7 +64,9 @@ pub fn handle_print(print: Print) -> String {
             }
         }
         Print::TagsChanged {
-            data, player: _, tags: _
+            data,
+            player: _,
+            tags: _,
         } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message));
@@ -84,23 +82,17 @@ pub fn handle_print(print: Print) -> String {
                 final_message.push_str(&handle_message_part(message));
             }
         }
-        Print::Goal {
-            data, player: _
-        } => {
+        Print::Goal { data, player: _ } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message));
             }
         }
-        Print::Release {
-            data, player: _
-        } => {
+        Print::Release { data, player: _ } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message));
             }
         }
-        Print::Collect {
-            data, player: _
-        } => {
+        Print::Collect { data, player: _ } => {
             for message in data {
                 final_message.push_str(&handle_message_part(message));
             }
@@ -131,12 +123,11 @@ fn handle_message_part(message: RichText) -> String {
             progression: _,
             useful: _,
             trap: _,
-        } => {
-            item.to_string()
-        }
-        RichText::Location { location, player: _ } => {
-            location.to_string()
-        }
+        } => item.to_string(),
+        RichText::Location {
+            location,
+            player: _,
+        } => location.to_string(),
         RichText::EntranceName(text) => text,
         RichText::Color { text, color } => {
             match color {
@@ -162,9 +153,7 @@ fn handle_message_part(message: RichText) -> String {
             }
         }
         RichText::Text(text) => text,
-        RichText::Player(player) => {
-            player.to_string()
-        }
+        RichText::Player(player) => player.to_string(),
     }
 }
 
