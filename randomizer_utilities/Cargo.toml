@@ -10,8 +10,5 @@ windows = { workspace = true, features = ["Win32_System_LibraryLoader", "Win32_S
 log4rs = "1.4.0"
 figment = { version = "0.10.19", features = ["toml"] }
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.149"
 toml = "0.9.11"
-strum_macros = "0.27.2"
 owo-colors = "4.2.3"
-anyhow = "1.0.100"

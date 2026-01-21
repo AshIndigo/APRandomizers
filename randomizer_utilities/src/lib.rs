@@ -28,7 +28,6 @@ use windows::core::PCWSTR;
 pub mod archipelago_utilities;
 pub mod exception_handler;
 pub mod mapping_utilities;
-pub mod ui_utilities;
 
 /// Default config for log files
 ///
