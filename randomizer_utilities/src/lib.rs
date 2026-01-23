@@ -27,6 +27,7 @@ use windows::core::PCWSTR;
 
 pub mod archipelago_utilities;
 pub mod exception_handler;
+pub mod item_sync;
 pub mod mapping_utilities;
 
 /// Default config for log files
@@ -207,6 +208,7 @@ pub unsafe fn replace_single_byte(offset_orig: usize, new_value: u8) {
     }
 }
 
+// TODO Can't replace with Version/NetworkVersion
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
 pub struct APVersion {
     pub major: i64,

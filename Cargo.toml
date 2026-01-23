@@ -1,6 +1,5 @@
 [workspace]
-members = ["archipelago_rs", "DMC3ArchipelagoClient", "DMCHDLoader", "randomizer_utilities",
-#    "DMC1ArchipelagoClient"
+members = ["archipelago_rs", "DMC3ArchipelagoClient", "DMCHDLoader", "randomizer_utilities", "DMC1ArchipelagoClient"
 ]
 resolver = "3"
 
