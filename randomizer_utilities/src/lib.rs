@@ -28,7 +28,9 @@ use windows::core::PCWSTR;
 pub mod archipelago_utilities;
 pub mod exception_handler;
 pub mod item_sync;
+pub mod loader_parser;
 pub mod mapping_utilities;
+pub mod versions;
 
 /// Default config for log files
 ///

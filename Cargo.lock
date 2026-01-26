@@ -52,7 +52,6 @@ dependencies = [
  "randomizer_utilities",
  "serde",
  "windows 0.62.2",
- "xxhash-rust",
 ]
 
 [[package]]
@@ -2993,8 +2992,10 @@ dependencies = [
  "owo-colors",
  "serde",
  "serde_json",
+ "strum_macros",
  "toml 0.9.11+spec-1.1.0",
  "windows 0.62.2",
+ "xxhash-rust",
 ]
 
 [[package]]

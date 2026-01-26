@@ -114,7 +114,7 @@ unsafe extern "system" fn exception_handler(info: *mut EXCEPTION_POINTERS) -> i3
             );
         }
         log::error!(
-            "Please upload the \"dmc3_rando_latest.log\" in your game's log folder to either Github or to the Archipelago game thread!"
+            "Please upload the \"dmc3_randomizer_latest.log\" in your game's log folder to either Github or to the Archipelago game thread!"
         );
         let ctx = *(*info).ContextRecord;
         // I could probably do this better but oh well.
