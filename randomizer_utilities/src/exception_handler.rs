@@ -95,7 +95,6 @@ unsafe extern "system" fn exception_handler(info: *mut EXCEPTION_POINTERS) -> i3
 
         // Get the module+offset
         if let Some((base, name)) = module_from_address(address as *const c_void) {
-            // TODO I could mention a hash error here if one has occurred
             let offset = address - base.0 as usize;
             log::error!(
                 "Exception {:#X} ({}) at {:#p} in {}+0x{:X}",

@@ -26,11 +26,12 @@ use windows::Win32::System::Memory::{
 use windows::core::PCWSTR;
 
 pub mod archipelago_utilities;
+#[cfg(feature = "dmc")]
+pub mod dmc;
 pub mod exception_handler;
 pub mod item_sync;
-pub mod loader_parser;
-pub mod mapping_utilities;
-pub mod versions;
+
+pub type BasicNothingFunc = unsafe extern "system" fn();
 
 /// Default config for log files
 ///

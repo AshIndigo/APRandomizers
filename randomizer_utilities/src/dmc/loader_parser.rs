@@ -1,4 +1,4 @@
-use crate::versions::VersionInformation;
+use crate::dmc::versions::VersionInformation;
 use std::fmt::{Display, Formatter};
 use std::sync::OnceLock;
 use windows::Win32::Foundation::FARPROC;

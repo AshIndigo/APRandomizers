@@ -2987,8 +2987,10 @@ version = "0.0.0"
 dependencies = [
  "archipelago_rs",
  "figment",
+ "imgui-sys",
  "log",
  "log4rs",
+ "minhook",
  "owo-colors",
  "serde",
  "serde_json",
