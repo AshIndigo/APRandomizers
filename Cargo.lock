@@ -29,7 +29,6 @@ dependencies = [
  "archipelago_rs",
  "bimap",
  "bitflags 2.10.0",
- "fontdue",
  "imgui-sys",
  "log",
  "minhook",
@@ -2987,6 +2986,7 @@ version = "0.0.0"
 dependencies = [
  "archipelago_rs",
  "figment",
+ "fontdue",
  "imgui-sys",
  "log",
  "log4rs",

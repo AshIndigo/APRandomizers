@@ -27,6 +27,7 @@ pub struct SlotSyncInfo {
 }
 
 pub fn write_sync_data_file(data: SyncData) -> Result<(), Box<dyn Error>> {
+    // Separate out into individual sync files per seed
     let mut file = File::create(SYNC_FILE)?;
     log::debug!("Writing sync file");
     file.write_all(serde_json::to_string_pretty(&data)?.as_bytes())?;

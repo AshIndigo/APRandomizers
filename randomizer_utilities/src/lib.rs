@@ -30,6 +30,7 @@ pub mod archipelago_utilities;
 pub mod dmc;
 pub mod exception_handler;
 pub mod item_sync;
+pub mod ui;
 
 pub type BasicNothingFunc = unsafe extern "system" fn();
 
