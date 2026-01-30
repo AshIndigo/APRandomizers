@@ -1,3 +1,5 @@
+use crate::ui::overlay;
+use crate::ui::overlay::SHADERS;
 use fontdue::Font;
 use std::collections::HashMap;
 use std::slice::from_raw_parts;
@@ -6,8 +8,6 @@ use windows::Win32::Foundation::{FALSE, TRUE};
 use windows::Win32::Graphics::Direct3D::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 use windows::Win32::Graphics::Direct3D11::*;
 use windows::Win32::Graphics::Dxgi::Common::{DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_SAMPLE_DESC};
-use crate::ui::overlay;
-use crate::ui::overlay::SHADERS;
 
 static BLEND_STATE: OnceLock<ID3D11BlendState> = OnceLock::new();
 static SAMPLER: OnceLock<ID3D11SamplerState> = OnceLock::new();
