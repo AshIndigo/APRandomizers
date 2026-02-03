@@ -112,6 +112,7 @@ unsafe extern "system" fn exception_handler(info: *mut EXCEPTION_POINTERS) -> i3
                 address as *const c_void
             );
         }
+        // TODO Need to change this to match the log file
         log::error!(
             "Please upload the \"dmc3_randomizer_latest.log\" in your game's log folder to either Github or to the Archipelago game thread!"
         );

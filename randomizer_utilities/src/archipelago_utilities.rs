@@ -158,5 +158,5 @@ fn handle_message_part(message: RichText) -> String {
 }
 
 pub fn get_description(item: &LocatedItem) -> String {
-    format!("{}'s {}", item.receiver().name(), item.item().name())
+    format!("{}'s {}", item.receiver().alias(), item.item().name())
 }
