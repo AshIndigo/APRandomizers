@@ -1,6 +1,5 @@
 [workspace]
-members = ["archipelago_rs", "DMC3ArchipelagoClient", "DMCHDLoader", "randomizer_utilities", "DMC1ArchipelagoClient"
-]
+members = ["archipelago_rs", "DMC3ArchipelagoClient", "DMCHDLoader", "randomizer_utilities", "DMC1ArchipelagoClient"]
 resolver = "3"
 
 [profile.release]
@@ -9,5 +8,5 @@ lto = true
 [workspace.dependencies]
 windows = "0.62.2"
 log = "0.4.29"
-anyhow = "1.0.100"
+anyhow = "1.0.102"
 bimap = "0.6.3"

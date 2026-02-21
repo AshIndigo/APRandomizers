@@ -1,3 +1,4 @@
+use std::sync::OnceLock;
 use std::{ffi::c_void, path::Path};
 use windows::Win32::Foundation::HMODULE;
 use windows::Win32::System::Diagnostics::Debug::{AddVectoredExceptionHandler, EXCEPTION_POINTERS};
@@ -112,9 +113,9 @@ unsafe extern "system" fn exception_handler(info: *mut EXCEPTION_POINTERS) -> i3
                 address as *const c_void
             );
         }
-        // TODO Need to change this to match the log file
         log::error!(
-            "Please upload the \"dmc3_randomizer_latest.log\" in your game's log folder to either Github or to the Archipelago game thread!"
+            "Please upload the \"{}\" in your game's log folder to either Github or to the Archipelago game thread!",
+            LOG_NAME.get().unwrap_or(&"<Unknown log>".to_string())
         );
         let ctx = *(*info).ContextRecord;
         // I could probably do this better but oh well.
@@ -153,8 +154,10 @@ unsafe extern "system" fn exception_handler(info: *mut EXCEPTION_POINTERS) -> i3
 
     0
 }
+static LOG_NAME: OnceLock<String> = OnceLock::new();
 
-pub fn install_exception_handler() {
+pub fn install_exception_handler(log_name: &str) {
+    LOG_NAME.set(log_name.to_string()).unwrap();
     unsafe {
         AddVectoredExceptionHandler(1, Some(exception_handler));
     }
