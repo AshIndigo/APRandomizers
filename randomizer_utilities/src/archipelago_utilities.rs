@@ -1,5 +1,9 @@
-use archipelago_rs::{LocatedItem, Print, RichText, TextColor};
+use archipelago_rs::{Error, LocatedItem, Print, RichText, TextColor};
+use oneshot::Receiver;
 use owo_colors::OwoColorize;
+use std::collections::HashMap;
+use std::sync::{LazyLock, RwLock};
+use std::thread;
 
 pub struct DeathLinkData {
     pub cause: String,
@@ -159,4 +163,34 @@ fn handle_message_part(message: RichText) -> String {
 
 pub fn get_description(item: &LocatedItem) -> String {
     format!("{}'s {}", item.receiver().alias(), item.item().name())
+}
+
+pub static CACHED_LOCATIONS: LazyLock<RwLock<HashMap<String, LocatedItem>>> =
+    LazyLock::new(|| RwLock::new(HashMap::new()));
+
+pub fn run_scouts(future: Receiver<Result<Vec<LocatedItem>, Error>>) {
+    thread::spawn(|| match future.recv() {
+        Ok(scouted) => {
+            parse_scouts(scouted);
+        }
+        Err(err) => log::error!("Failed to run scouts for: {}", err),
+    });
+}
+
+pub fn parse_scouts(res: Result<Vec<LocatedItem>, Error>) {
+    match res {
+        Ok(items) => match CACHED_LOCATIONS.write() {
+            Ok(mut cached_locations) => {
+                for item in items {
+                    cached_locations.insert(item.location().name().to_string(), item);
+                }
+            }
+            Err(err) => {
+                log::error!("Unable to write to location cache: {}", err)
+            }
+        },
+        Err(err) => {
+            log::error!("Failed to scout: {}", err);
+        }
+    }
 }
