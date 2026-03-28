@@ -1,35 +1,40 @@
+use archipelago_rs::Client;
+use figment::Figment;
+use figment::providers::{Format, Toml};
+use log::LevelFilter;
+use log4rs::append::console::ConsoleAppender;
+use log4rs::append::rolling_file::RollingFileAppender;
+use log4rs::append::rolling_file::policy::compound::CompoundPolicy;
+use log4rs::append::rolling_file::policy::compound::roll::fixed_window::FixedWindowRoller;
+use log4rs::append::rolling_file::policy::compound::trigger::onstartup::OnStartUpTrigger;
+use log4rs::config::{Appender, Logger, Root};
+use log4rs::encode::pattern::PatternEncoder;
+use log4rs::{Config, Handle};
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::ffi::OsStr;
-use std::{fs, ptr};
 use std::fmt::Display;
 use std::os::windows::ffi::OsStrExt;
 use std::path::Path;
 use std::sync::OnceLock;
-use figment::Figment;
-use figment::providers::{Format, Toml};
-use log4rs::append::console::ConsoleAppender;
-use log4rs::append::rolling_file::policy::compound::roll::fixed_window::FixedWindowRoller;
-use log4rs::append::rolling_file::policy::compound::trigger::onstartup::OnStartUpTrigger;
-use log4rs::append::rolling_file::policy::compound::CompoundPolicy;
-use log4rs::append::rolling_file::RollingFileAppender;
-use log4rs::config::{Appender, Logger, Root};
-use log4rs::encode::pattern::PatternEncoder;
-use log4rs::{Config, Handle};
-use log::LevelFilter;
-use serde::{Deserialize, Serialize};
-use tokio::sync;
-use tokio::sync::mpsc::{Receiver, Sender};
-use windows::core::PCWSTR;
-use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows::Win32::System::Memory::{VirtualProtect, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS};
+use std::sync::mpsc::{Receiver, Sender};
+use std::{fs, ptr, sync};
 use windows::Win32::Foundation::GetLastError;
+use windows::Win32::System::LibraryLoader::GetModuleHandleW;
+use windows::Win32::System::Memory::{
+    PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS, VirtualProtect,
+};
+use windows::core::PCWSTR;
 
-pub mod cache;
+pub mod archipelago_utilities;
+#[cfg(feature = "dmc")]
+pub mod dmc;
 pub mod exception_handler;
 pub mod item_sync;
-pub mod archipelago_utilities;
-pub mod mapping_utilities;
-pub mod ui_utilities;
+pub mod ui;
+
+pub type BasicNothingFunc = unsafe extern "system" fn();
 
 /// Default config for log files
 ///
@@ -112,16 +117,19 @@ where
     unsafe { *(address as *const T) }
 }
 
+const ARCHIPELAGO: &str = "archipelago";
 
 /// Loads or create a config file with the given name and struct.
 ///
 /// This will also remake the config if the file cannot be read
 pub fn load_config<T>(config_name: &str) -> Result<T, Box<dyn Error>>
-where T: Default + serde::ser::Serialize + serde::de::Deserialize<'static> {
-    if !fs::exists("archipelago")? {
-        fs::create_dir("archipelago/")?;
+where
+    T: Default + serde::ser::Serialize + serde::de::Deserialize<'static>,
+{
+    if !fs::exists(ARCHIPELAGO)? {
+        fs::create_dir(ARCHIPELAGO)?;
     }
-    let config_path = format!("archipelago/{}.toml", config_name);
+    let config_path = format!("{}/{}.toml", ARCHIPELAGO, config_name);
     if !Path::new(&config_path).exists() {
         log::debug!("Config file not found. Creating a default one.");
         let toml_string =
@@ -135,11 +143,10 @@ where T: Default + serde::ser::Serialize + serde::de::Deserialize<'static> {
         Ok(config) => Ok(config),
         Err(err) => {
             log::warn!("Failed to parse config: {err}. Backing up and regenerating.");
-            
-            let backup_path = format!("archipelago/{}.old.toml", config_name);
+
+            let backup_path = format!("{}/{}.old.toml", ARCHIPELAGO, config_name);
             fs::rename(&config_path, &backup_path)?;
             log::info!("Old config backed up to {backup_path}");
-
 
             let toml_string =
                 toml::to_string(&T::default()).expect("Could not serialize default config");
@@ -150,8 +157,8 @@ where T: Default + serde::ser::Serialize + serde::de::Deserialize<'static> {
     }
 }
 
-pub fn setup_channel_pair<T>(channel: &OnceLock<Sender<T>>, buffer_count: Option<usize>) -> Receiver<T>  {
-    let (tx, rx) = sync::mpsc::channel(buffer_count.unwrap_or(8));
+pub fn setup_channel_pair<T>(channel: &OnceLock<Sender<T>>) -> Receiver<T> {
+    let (tx, rx) = sync::mpsc::channel();
     channel.set(tx).expect("TX already initialized");
     rx
 }
@@ -209,6 +216,7 @@ pub unsafe fn replace_single_byte(offset_orig: usize, new_value: u8) {
     }
 }
 
+// TODO Can't replace with Version/NetworkVersion
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
 pub struct APVersion {
     pub major: i64,
@@ -218,9 +226,19 @@ pub struct APVersion {
 
 impl Display for APVersion {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}.{}.{}", self.major, self.minor, self.build
-        )
+        write!(f, "{}.{}.{}", self.major, self.minor, self.build)
     }
+}
+
+/// Get room specific path and creates it if it doesn't exist
+pub fn get_room_path<S: DeserializeOwned + 'static>(
+    client: &Client<S>,
+) -> Result<String, Box<dyn Error>> {
+    let path = format!(
+        "archipelago/{}_{}/",
+        client.seed_name(),
+        client.this_player().name()
+    );
+    fs::create_dir_all(&path)?;
+    Ok(path)
 }
