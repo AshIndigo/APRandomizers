@@ -1,3 +1,4 @@
+use archipelago_rs::Client;
 use figment::Figment;
 use figment::providers::{Format, Toml};
 use log::LevelFilter;
@@ -9,6 +10,7 @@ use log4rs::append::rolling_file::policy::compound::trigger::onstartup::OnStartU
 use log4rs::config::{Appender, Logger, Root};
 use log4rs::encode::pattern::PatternEncoder;
 use log4rs::{Config, Handle};
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::ffi::OsStr;
@@ -115,6 +117,8 @@ where
     unsafe { *(address as *const T) }
 }
 
+const ARCHIPELAGO: &str = "archipelago";
+
 /// Loads or create a config file with the given name and struct.
 ///
 /// This will also remake the config if the file cannot be read
@@ -122,10 +126,10 @@ pub fn load_config<T>(config_name: &str) -> Result<T, Box<dyn Error>>
 where
     T: Default + serde::ser::Serialize + serde::de::Deserialize<'static>,
 {
-    if !fs::exists("archipelago")? {
-        fs::create_dir("archipelago/")?;
+    if !fs::exists(ARCHIPELAGO)? {
+        fs::create_dir(ARCHIPELAGO)?;
     }
-    let config_path = format!("archipelago/{}.toml", config_name);
+    let config_path = format!("{}/{}.toml", ARCHIPELAGO, config_name);
     if !Path::new(&config_path).exists() {
         log::debug!("Config file not found. Creating a default one.");
         let toml_string =
@@ -140,7 +144,7 @@ where
         Err(err) => {
             log::warn!("Failed to parse config: {err}. Backing up and regenerating.");
 
-            let backup_path = format!("archipelago/{}.old.toml", config_name);
+            let backup_path = format!("{}/{}.old.toml", ARCHIPELAGO, config_name);
             fs::rename(&config_path, &backup_path)?;
             log::info!("Old config backed up to {backup_path}");
 
@@ -224,4 +228,17 @@ impl Display for APVersion {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}.{}.{}", self.major, self.minor, self.build)
     }
+}
+
+/// Get room specific path and creates it if it doesn't exist
+pub fn get_room_path<S: DeserializeOwned + 'static>(
+    client: &Client<S>,
+) -> Result<String, Box<dyn Error>> {
+    let path = format!(
+        "archipelago/{}_{}/",
+        client.seed_name(),
+        client.this_player().name()
+    );
+    fs::create_dir_all(&path)?;
+    Ok(path)
 }

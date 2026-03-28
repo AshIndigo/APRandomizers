@@ -1,7 +1,6 @@
 use archipelago_rs::Client;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
 use std::io::{BufReader, Write};
@@ -10,14 +9,8 @@ use std::sync::Mutex;
 use std::sync::atomic::AtomicI64;
 
 // Note this is all tailored for DMC games
-const SYNC_FILE: &str = "archipelago.json";
+const SYNC_FILE_NAME: &str = "archipelago.json";
 pub static CURRENT_INDEX: AtomicI64 = AtomicI64::new(0);
-
-#[derive(Deserialize, Serialize, Debug, Default)]
-pub struct SyncData {
-    // Each save slot has its own sync index and offline checks
-    pub room_sync_info: HashMap<String, SlotSyncInfo>, // String is "seed_slot-name"
-}
 
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct SlotSyncInfo {
@@ -26,9 +19,15 @@ pub struct SlotSyncInfo {
     pub offline_checks: Vec<i64>,
 }
 
-pub fn write_sync_data_file(data: SyncData) -> Result<(), Box<dyn Error>> {
-    // TODO Separate out into individual sync files per seed?
-    let mut file = File::create(SYNC_FILE)?;
+pub fn write_sync_data_file<S: DeserializeOwned + 'static>(
+    data: SlotSyncInfo,
+    client: &Client<S>,
+) -> Result<(), Box<dyn Error>> {
+    let mut file = File::create(format!(
+        "{}{}",
+        crate::get_room_path(client)?,
+        SYNC_FILE_NAME
+    ))?;
     log::debug!("Writing sync file");
     file.write_all(serde_json::to_string_pretty(&data)?.as_bytes())?;
     file.flush()?;
@@ -36,28 +35,24 @@ pub fn write_sync_data_file(data: SyncData) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn check_for_sync_file() -> bool {
-    Path::new(SYNC_FILE).try_exists().unwrap_or_else(|err| {
-        log::info!("Failed to check for sync file: {}", err);
-        false
-    })
+    Path::new(SYNC_FILE_NAME)
+        .try_exists()
+        .unwrap_or_else(|err| {
+            log::info!("Failed to check for sync file: {}", err);
+            false
+        })
 }
 
 /// Reads the received items indices from the save file
-// TODO Need to account for older files
-pub fn read_save_data() -> Result<SyncData, Box<dyn Error>> {
+pub fn read_save_data() -> Result<SlotSyncInfo, Box<dyn Error>> {
     if !check_for_sync_file() {
-        Ok(SyncData::default())
+        Ok(SlotSyncInfo::default())
     } else {
-        let save_data = SyncData::deserialize(&mut serde_json::Deserializer::from_reader(
-            BufReader::new(File::open(SYNC_FILE)?),
+        let save_data = SlotSyncInfo::deserialize(&mut serde_json::Deserializer::from_reader(
+            BufReader::new(File::open(SYNC_FILE_NAME)?),
         ))?;
         Ok(save_data)
     }
-}
-
-/// Get the key for [SYNC_DATA]
-pub fn get_sync_file_key(seed_name: &str, slot_name: String) -> String {
-    format!("{}_{}", seed_name, slot_name)
 }
 
 pub static OFFLINE_CHECKS: Mutex<Vec<i64>> = Mutex::new(Vec::new());
@@ -70,33 +65,20 @@ pub fn send_offline_checks<T: DeserializeOwned>(
 ) -> Result<(), Box<dyn Error>> {
     log::debug!("Attempting to send any offline checks");
     let mut sync_data = read_save_data()?;
-    let index = get_sync_file_key(client.seed_name(), client.this_player().name().parse()?);
-    if sync_data.room_sync_info.contains_key(&index) {
-        match client.mark_checked(
-            sync_data
-                .room_sync_info
-                .get(&index)
-                .unwrap()
-                .offline_checks
-                .clone(),
-        ) {
-            Ok(_) => {
-                log::info!("Successfully sent offline checks");
-                sync_data
-                    .room_sync_info
-                    .get_mut(&index)
-                    .unwrap()
-                    .offline_checks
-                    .clear();
-                write_sync_data_file(sync_data)?;
-            }
-            Err(err) => {
-                log::error!(
-                    "Failed to send offline checks, will attempt next reconnection: {}",
-                    err
-                );
-            }
+
+    match client.mark_checked(sync_data.offline_checks.clone()) {
+        Ok(_) => {
+            log::info!("Successfully sent offline checks");
+            sync_data.offline_checks.clear();
+            write_sync_data_file(sync_data, client)?;
+        }
+        Err(err) => {
+            log::error!(
+                "Failed to send offline checks, will attempt next reconnection: {}",
+                err
+            );
         }
     }
+
     Ok(())
 }
