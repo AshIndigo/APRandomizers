@@ -34,22 +34,36 @@ pub fn write_sync_data_file<S: DeserializeOwned + 'static>(
     Ok(())
 }
 
-pub fn check_for_sync_file() -> bool {
-    Path::new(SYNC_FILE_NAME)
-        .try_exists()
-        .unwrap_or_else(|err| {
+pub fn check_for_sync_file<S: DeserializeOwned + 'static>(client: &Client<S>) -> bool {
+    Path::new(&format!(
+        "{}{}",
+        crate::get_room_path(client).unwrap_or_else(|err| {
             log::info!("Failed to check for sync file: {}", err);
-            false
-        })
+            "unknown".parse().unwrap()
+        }),
+        SYNC_FILE_NAME
+    ))
+    .try_exists()
+    .unwrap_or_else(|err| {
+        log::info!("Failed to check for sync file: {}", err);
+        false
+    })
 }
 
 /// Reads the received items indices from the save file
-pub fn read_save_data() -> Result<SlotSyncInfo, Box<dyn Error>> {
-    if !check_for_sync_file() {
+pub fn read_save_data<S: DeserializeOwned + 'static>(
+    client: &Client<S>,
+) -> Result<SlotSyncInfo, Box<dyn Error>> {
+    if !check_for_sync_file(client) {
         Ok(SlotSyncInfo::default())
     } else {
+        let file = File::open(format!(
+            "{}{}",
+            crate::get_room_path(client)?,
+            SYNC_FILE_NAME
+        ))?;
         let save_data = SlotSyncInfo::deserialize(&mut serde_json::Deserializer::from_reader(
-            BufReader::new(File::open(SYNC_FILE_NAME)?),
+            BufReader::new(file),
         ))?;
         Ok(save_data)
     }
@@ -64,7 +78,7 @@ pub fn send_offline_checks<T: DeserializeOwned>(
     client: &mut Client<T>,
 ) -> Result<(), Box<dyn Error>> {
     log::debug!("Attempting to send any offline checks");
-    let mut sync_data = read_save_data()?;
+    let mut sync_data = read_save_data(client)?;
 
     match client.mark_checked(sync_data.offline_checks.clone()) {
         Ok(_) => {
