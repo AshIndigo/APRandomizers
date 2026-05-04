@@ -6,14 +6,14 @@ use windows::Win32::Graphics::Direct3D::Fxc::D3DCompile;
 use windows::Win32::Graphics::Direct3D::ID3DBlob;
 use windows::Win32::Graphics::Direct3D11::{
     D3D11_BIND_VERTEX_BUFFER, D3D11_BUFFER_DESC, D3D11_CPU_ACCESS_WRITE, D3D11_INPUT_ELEMENT_DESC,
-    D3D11_INPUT_PER_VERTEX_DATA, D3D11_USAGE_DYNAMIC, ID3D11Buffer, ID3D11Device,
-    ID3D11DeviceContext, ID3D11InputLayout, ID3D11RenderTargetView, ID3D11Texture2D,
+    D3D11_INPUT_PER_VERTEX_DATA, D3D11_TEXTURE2D_DESC, D3D11_USAGE_DYNAMIC, ID3D11Buffer,
+    ID3D11Device, ID3D11DeviceContext, ID3D11InputLayout, ID3D11RenderTargetView, ID3D11Texture2D,
 };
 use windows::Win32::Graphics::Dxgi::Common::{
     DXGI_FORMAT_R32G32_FLOAT, DXGI_FORMAT_R32G32B32_FLOAT,
 };
 use windows::Win32::Graphics::Dxgi::IDXGISwapChain;
-use windows::core::PCSTR;
+use windows::core::{Interface, PCSTR};
 
 pub struct D3D11State {
     pub device: ID3D11Device,
@@ -24,9 +24,9 @@ pub struct D3D11State {
     pub rtv: Option<ID3D11RenderTargetView>,
 }
 
-pub static STATE: OnceLock<RwLock<D3D11State>> = OnceLock::new();
+pub(crate) static STATE: OnceLock<RwLock<D3D11State>> = OnceLock::new();
 
-pub static SHADERS: LazyLock<(ID3DBlob, ID3DBlob)> = LazyLock::new(|| {
+pub(crate) static SHADERS: LazyLock<(ID3DBlob, ID3DBlob)> = LazyLock::new(|| {
     let mut vs_blob: Option<ID3DBlob> = None;
     let mut ps_blob: Option<ID3DBlob> = None;
     let mut err_blob: Option<ID3DBlob> = None;
@@ -180,4 +180,19 @@ pub fn get_resources(swap_chain: &IDXGISwapChain) -> &RwLock<D3D11State> {
         }
     }
     state
+}
+
+pub fn update_screen_size(swap_chain: &IDXGISwapChain) -> (f32, f32) {
+    let back_buffer: ID3D11Texture2D = {
+        let ptr: ID3D11Texture2D =
+            unsafe { swap_chain.GetBuffer(0) }.expect("Failed to get back buffer");
+        ptr.cast().unwrap()
+    };
+
+    let mut desc = D3D11_TEXTURE2D_DESC::default();
+    unsafe {
+        back_buffer.GetDesc(&mut desc);
+    }
+
+    (desc.Width as f32, desc.Height as f32)
 }

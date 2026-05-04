@@ -1,5 +1,5 @@
-use crate::ui::overlay;
-use crate::ui::overlay::SHADERS;
+use crate::ui::dx11_state;
+use crate::ui::dx11_state::SHADERS;
 use fontdue::Font;
 use std::collections::HashMap;
 use std::slice::from_raw_parts;
@@ -298,7 +298,7 @@ pub fn glyph_vertices(quad: &GlyphQuad, screen_width: f32, screen_height: f32) -
 }
 
 pub fn draw_string(
-    state: &overlay::D3D11State,
+    state: &dx11_state::D3D11State,
     text: &str,
     x: f32,
     y: f32,

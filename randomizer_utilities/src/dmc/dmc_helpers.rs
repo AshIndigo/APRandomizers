@@ -1,9 +1,10 @@
+use crate::ui::dx11_types::PresentFn;
 use std::sync::LazyLock;
 
-pub trait GameConfig {
-    // TODO Either expand on this to reduce duped code between DMC games, or drop it?
-    const REMOTE_ID: u32;
-    const GAME_NAME: &'static str;
+#[derive(Debug)]
+pub struct OverlayHandler {
+    pub create_device_addr: usize,
+    pub present_fn: PresentFn,
 }
 
 pub struct DDMKHandler {

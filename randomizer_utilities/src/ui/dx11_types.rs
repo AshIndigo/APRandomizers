@@ -8,7 +8,7 @@ use windows::Win32::Graphics::Dxgi::{
 };
 use windows::core::HRESULT;
 
-pub type D3D11CreateDeviceAndSwapChain = unsafe extern "system" fn(
+pub(crate) type D3D11CreateDeviceAndSwapChain = unsafe extern "system" fn(
     padapter: *mut c_void,
     drivertype: D3D_DRIVER_TYPE,
     software: HMODULE,
@@ -23,8 +23,8 @@ pub type D3D11CreateDeviceAndSwapChain = unsafe extern "system" fn(
     ppimmediatecontext: *mut *mut c_void,
 ) -> HRESULT;
 
-pub type PresentFn = unsafe extern "system" fn(IDXGISwapChain, u32, u32) -> i32; // *mut IDXGISwapChain
-pub type ResizeBuffersFn = unsafe extern "system" fn(
+pub(crate) type PresentFn = unsafe extern "system" fn(IDXGISwapChain, u32, u32) -> i32; // *mut IDXGISwapChain
+pub(crate) type ResizeBuffersFn = unsafe extern "system" fn(
     *mut IDXGISwapChain,
     u32,
     u32,
@@ -33,6 +33,6 @@ pub type ResizeBuffersFn = unsafe extern "system" fn(
     DXGI_SWAP_CHAIN_FLAG,
 );
 
-pub static ORIGINAL_DEV_CHAIN: OnceLock<D3D11CreateDeviceAndSwapChain> = OnceLock::new();
+pub(crate) static ORIGINAL_DEV_CHAIN: OnceLock<D3D11CreateDeviceAndSwapChain> = OnceLock::new();
 pub static ORIGINAL_PRESENT: OnceLock<PresentFn> = OnceLock::new();
-pub static ORIGINAL_RESIZE_BUFFERS: OnceLock<ResizeBuffersFn> = OnceLock::new();
+pub(crate) static ORIGINAL_RESIZE_BUFFERS: OnceLock<ResizeBuffersFn> = OnceLock::new();

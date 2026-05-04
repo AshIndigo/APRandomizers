@@ -1,5 +1,5 @@
 use crate::BasicNothingFunc;
-use crate::dmc::dmc_constants::DDMKHandler;
+use crate::dmc::dmc_helpers::DDMKHandler;
 use imgui_sys::{ImGuiCond, ImGuiWindowFlags, ImVec2, cty};
 use minhook::MinHook;
 use std::collections::HashSet;
