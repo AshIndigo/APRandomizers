@@ -147,7 +147,8 @@ pub fn create_rgba_font_atlas(
 
         for (c, bitmap, metrics) in row {
             let w = metrics.width as u32;
-            let h = if w > 0 { bitmap.len() as u32 / w } else { 0 };
+            let len = bitmap.len() as u32;
+            let h: u32 = len.checked_div(w).unwrap_or(0);
 
             if w > 0 && h > 0 {
                 for y in 0..h {
