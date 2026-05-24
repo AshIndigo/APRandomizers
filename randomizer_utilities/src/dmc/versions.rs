@@ -220,6 +220,13 @@ static CRIMSON_INFO: LazyLock<Vec<VersionInformation>> = LazyLock::new(|| {
         description: "0.4 Crimson",
         game_type: Game::DMC3,
         mod_type: Some(Mod::Crimson),
+    },
+    VersionInformation {
+        hash: 1469832707212152177,
+        valid_for_use: true, // Lying, but oh well
+        description: "0.5 Crimson",
+        game_type: Game::DMC3,
+        mod_type: Some(Mod::Crimson),
     }]
 });
 

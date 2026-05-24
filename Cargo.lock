@@ -9,6 +9,7 @@ dependencies = [
  "anyhow",
  "archipelago_rs",
  "bimap",
+ "bitflags 2.11.1",
  "imgui",
  "imgui-sys",
  "log",
