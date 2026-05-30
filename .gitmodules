@@ -7,6 +7,9 @@
 [submodule "DMC3ArchipelagoClient"]
 	path = DMC3ArchipelagoClient
 	url = https://github.com/ashindigo/DMC3ArchipelagoClient
+[submodule "DMC2ArchipelagoClient"]
+    path = DMC2ArchipelagoClient
+    url = https://github.com/ashindigo/DMC2ArchipelagoClient
 [submodule "DMC1ArchipelagoClient"]
 	path = DMC1ArchipelagoClient
 	url = https://github.com/AshIndigo/DMC1ArchipelagoClient
