@@ -23,6 +23,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "DMC2ArchipelagoClient"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "archipelago_rs",
+ "bimap",
+ "bitflags 2.11.1",
+ "imgui-sys",
+ "log",
+ "minhook",
+ "oneshot",
+ "rand 0.10.1",
+ "randomizer_utilities",
+ "serde",
+ "serde_json",
+ "strum",
+ "strum_macros",
+ "windows",
+]
+
+[[package]]
 name = "DMC3ArchipelagoClient"
 version = "0.5.2"
 dependencies = [
