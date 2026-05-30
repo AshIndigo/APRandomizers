@@ -30,7 +30,7 @@ pub enum Mod {
 #[repr(C)]
 pub struct VersionInformation {
     hash: u64,
-    pub valid_for_use: bool,
+    pub valid_for_use: bool, // Only used for mods
     pub description: &'static str,
     pub game_type: Game,
     pub mod_type: Option<Mod>,
@@ -69,7 +69,7 @@ static DMC1_INFO: LazyLock<Vec<VersionInformation>> = LazyLock::new(|| {
         },
         VersionInformation {
             hash: 6932768196842012018,
-            valid_for_use: false,
+            valid_for_use: true,
             description: "Latest DMC1",
             game_type: Game::DMC1,
             mod_type: None,
@@ -102,7 +102,7 @@ static DMC2_INFO: LazyLock<Vec<VersionInformation>> = LazyLock::new(|| {
         },
         VersionInformation {
             hash: 7733538334450880217,
-            valid_for_use: false,
+            valid_for_use: true,
             description: "Latest DMC2",
             game_type: Game::DMC2,
             mod_type: None,
@@ -142,7 +142,7 @@ static DMC3_INFO: LazyLock<Vec<VersionInformation>> = LazyLock::new(|| {
         },
         VersionInformation {
             hash: 11219846177156872589,
-            valid_for_use: false,
+            valid_for_use: true,
             description: "Latest DMC3",
             game_type: Game::DMC3,
             mod_type: None,
@@ -214,20 +214,22 @@ static MARY_INFO: LazyLock<Vec<VersionInformation>> = LazyLock::new(|| {
 });
 
 static CRIMSON_INFO: LazyLock<Vec<VersionInformation>> = LazyLock::new(|| {
-    vec![VersionInformation {
-        hash: 6027093939875741571,
-        valid_for_use: true,
-        description: "0.4 Crimson",
-        game_type: Game::DMC3,
-        mod_type: Some(Mod::Crimson),
-    },
-    VersionInformation {
-        hash: 1469832707212152177,
-        valid_for_use: true, // Lying, but oh well
-        description: "0.5 Crimson",
-        game_type: Game::DMC3,
-        mod_type: Some(Mod::Crimson),
-    }]
+    vec![
+        VersionInformation {
+            hash: 6027093939875741571,
+            valid_for_use: true,
+            description: "0.4 Crimson",
+            game_type: Game::DMC3,
+            mod_type: Some(Mod::Crimson),
+        },
+        VersionInformation {
+            hash: 1469832707212152177,
+            valid_for_use: true, // Lying, but oh well
+            description: "0.5 Crimson",
+            game_type: Game::DMC3,
+            mod_type: Some(Mod::Crimson),
+        },
+    ]
 });
 
 impl Game {
